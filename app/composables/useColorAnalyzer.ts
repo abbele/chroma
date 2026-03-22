@@ -24,7 +24,7 @@
  * })
  */
 
-import { ref, shallowRef, onUnmounted } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted } from 'vue'
 import { wrap, type Remote } from 'comlink'
 import type { ColorAnalyzerAPI, AnalysisConfig, TileAnalysis } from '#src/types/analysis'
 import { tileKey } from '#src/types/analysis'
@@ -228,6 +228,12 @@ export function useColorAnalyzer(): UseColorAnalyzerReturn {
   // ─────────────────────────────────────────────────────────────────────────
   // CLEANUP
   // ─────────────────────────────────────────────────────────────────────────
+
+  // WORKER: pre-warm lazy al mount — evita che Vite compili il modulo worker
+  // al primo click causando un HMR update e un refresh inatteso della pagina.
+  onMounted(() => {
+    if (import.meta.client) ensureWorker()
+  })
 
   onUnmounted(() => {
     stopProgressPolling()

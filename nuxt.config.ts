@@ -37,10 +37,17 @@ export default defineNuxtConfig({
     },
   },
 
-  // PERF: Nitro rileva automaticamente l'ambiente Vercel al deploy.
+  // PERF: Nitro rileva automaticamente l'ambiente Vercel tramite framework: "nuxtjs" in vercel.json.
   // Le pagine vengono servite come SPA statica (.output/public);
   // le route server/api/ diventano Serverless Functions Vercel (Node 18+).
   // La variabile AI_API_KEY va impostata su Vercel Dashboard → Settings → Environment Variables.
+  nitro: {
+    vercel: {
+      functions: {
+        maxDuration: 30,
+      },
+    },
+  },
 
   // Variabili d'ambiente pubbliche (lato client) — nessuna chiave privata qui.
   // Le API key rimangono esclusivamente lato server via process.env.

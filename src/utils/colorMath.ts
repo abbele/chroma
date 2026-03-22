@@ -339,9 +339,11 @@ export function computeWeightMaps(
   const numPixels = tileWidth * tileHeight
   const maps = Array.from({ length: numPigments }, () => new Float32Array(numPixels))
 
-  // PERF: temperatura per il softmax — valori più bassi = assegnazioni più nette
-  // 50.0 in spazio Lab corrisponde approssimativamente a ΔE ~5-7 come "raggio di influenza"
-  const temperature = 50.0
+  // PERF: temperatura per il softmax — controlla quanto "sfumati" sono i confini tra regioni.
+  // In spazio Lab, distanze tipiche tra colori di un dipinto sono 20–60 unità.
+  // temperature=15: confini netti, peso dominante > 0.5 per centroids distanti > 20 unità.
+  // temperature=50 (precedente): troppo alto → peso max ~0.20 → coverage sempre = 0.
+  const temperature = 15.0
 
   for (let i = 0; i < numPixels && i < pixelsLab.length; i++) {
     const px = pixelsLab[i]

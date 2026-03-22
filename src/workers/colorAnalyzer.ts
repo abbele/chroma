@@ -297,29 +297,43 @@ async function analyzeTile(imageData: ImageData, config: AnalysisConfig): Promis
   const weightMaps = computeWeightMaps(pixelsLab, matchedCentroids, width, height)
   _progress = 90
 
-  // Step 5: calcola copertura % da weight map
-  for (let i = 0; i < matches.length; i++) {
-    const map = weightMaps[i]
-    // Copertura = % di pixel dove il peso supera 0.5 (pigmento dominante in quel pixel)
-    let dominant = 0
-    for (let j = 0; j < map.length; j++) {
-      if (map[j] > 0.5) dominant++
+  // Step 5: calcola copertura % da weight map con hard assignment (argmax).
+  // Per ogni pixel, il pigmento con peso massimo "vince" il pixel.
+  // Somma delle coperture ≈ 100%. Robusto indipendentemente dalla temperature del softmax.
+  const numPigments = matches.length
+  const numPixels = weightMaps[0]?.length ?? 0
+  if (numPixels > 0) {
+    const dominantCount = new Float64Array(numPigments)
+    for (let j = 0; j < numPixels; j++) {
+      let maxW = -1
+      let maxC = 0
+      for (let c = 0; c < numPigments; c++) {
+        if (weightMaps[c][j] > maxW) { maxW = weightMaps[c][j]; maxC = c }
+      }
+      dominantCount[maxC]++
     }
-    matches[i].coverage = map.length > 0 ? (dominant / map.length) * 100 : 0
+    for (let i = 0; i < numPigments; i++) {
+      matches[i].coverage = (dominantCount[i] / numPixels) * 100
+    }
   }
 
-  // Ordina per copertura decrescente
-  matches.sort((a, b) => b.coverage - a.coverage)
+  // Ordina per copertura decrescente mantenendo weightMaps allineate alla palette.
+  // weightMaps[i] deve corrispondere a palette[i] — vanno riordinate insieme.
+  const sortOrder = matches
+    .map((m, i) => ({ m, i }))
+    .sort((a, b) => b.m.coverage - a.m.coverage)
+  const sortedMatches = sortOrder.map(e => e.m)
+  const sortedWeightMaps = sortOrder.map(e => weightMaps[e.i])
 
   // Costruisci la mappa coverage per stats
   const coverage: Record<string, number> = {}
-  for (const m of matches) coverage[m.pigment.id] = m.coverage
+  for (const m of sortedMatches) coverage[m.pigment.id] = m.coverage
 
   _progress = 100
 
   return {
-    palette: matches,
-    weightMaps,
+    palette: sortedMatches,
+    weightMaps: sortedWeightMaps,
     stats: {
       dominantPigment: matches[0]?.pigment.id ?? '',
       coverage,
