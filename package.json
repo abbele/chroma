@@ -10,11 +10,13 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "colorjs.io": "^0.6.1",
     "comlink": "^4.4.2",
     "d3": "^7.9.0",
     "mixbox": "^2.0.0",
     "nuxt": "^4.4.2",
+    "openai": "^6.32.0",
     "openseadragon": "^6.0.2",
     "vue": "^3.5.30",
     "vue-router": "^5.0.3"
