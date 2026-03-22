@@ -10,8 +10,16 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "colorjs.io": "^0.6.1",
+    "comlink": "^4.4.2",
+    "d3": "^7.9.0",
+    "mixbox": "^2.0.0",
     "nuxt": "^4.4.2",
+    "openseadragon": "^6.0.2",
     "vue": "^3.5.30",
     "vue-router": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/openseadragon": "^5.0.2"
   }
 }
