@@ -296,6 +296,9 @@
       </aside>
     </div>
 
+    <!-- ── La scienza (Fase 6) ──────────────────────────────────────────── -->
+    <ScienceSection />
+
     <!-- ── PigmentCard drawer (Fase 3) ──────────────────────────────────── -->
     <!--
       UX: il drawer è renderizzato fuori dal pannello per non influire sul layout.
