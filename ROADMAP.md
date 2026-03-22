@@ -203,6 +203,9 @@ interface PigmentMatch {
 - [x] Bottoni "Mostra tutti" / "Nascondi tutti"
 - [x] Slider opacità overlay (0–100%) nella barra sotto il viewer
 - [x] Click su swatch/nome → apre `<PigmentCard>`
+- [x] Hover pigmento → `activePigmentId` propagato al componente WebGL
+- [x] Checkbox **Evidenzia selezionato** (default on): attenua i layer non in hover (opacity × 0.12 via `u_dimmed`)
+- [x] Checkbox **Contorni** (default off): edge detection nel fragment shader — mostra solo il bordo della regione pigmento (campiona 4 vicini cardinali via `u_contour` + `u_texSize`)
 
 ### Lente cromatica
 - [ ] `composable/useChromaticLens.ts` — rimandato a Fase futura (TODO: @fase2+)
@@ -216,6 +219,7 @@ interface PigmentMatch {
 > - `app/components/PigmentHeatmap.vue` — canvas WebGL2 nel slot #overlay, upload R32F textures, rendering per-pigment con alpha blending
 > - Toggle visibilità per-pigmento nella lista (layer dot + Mostra/Nascondi tutti)
 > - Slider opacità overlay nella barra sotto il viewer
+> - Darken mode + contour mode: hover-based selection, edge detection shader, boost luminosità pigmenti scuri
 
 ---
 

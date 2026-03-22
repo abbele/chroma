@@ -65,10 +65,33 @@ const props = withDefaults(defineProps<{
    */
   tileWidth?: number
   tileHeight?: number
+
+  /**
+   * ID del pigmento attualmente in hover nel pannello.
+   * null = nessuna selezione attiva.
+   * UX: usato da darkenNonSelected per attenuare gli altri layer.
+   */
+  activePigmentId?: string | null
+
+  /**
+   * Darken mode: attenua i layer non selezionati quando un pigmento è in hover.
+   * Default true.
+   */
+  darkenNonSelected?: boolean
+
+  /**
+   * Contour mode: mostra solo il contorno della regione pigmento invece del fill.
+   * Usa edge detection nel fragment shader (campiona i 4 vicini cardinali).
+   * Default false.
+   */
+  showContour?: boolean
 }>(), {
   opacity: 0.7,
   tileWidth: 512,
   tileHeight: 512,
+  activePigmentId: null,
+  darkenNonSelected: true,
+  showContour: false,
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,10 +111,17 @@ let uWeightMap: WebGLUniformLocation | null = null
 let uColor: WebGLUniformLocation | null = null
 let uOpacity: WebGLUniformLocation | null = null
 let uThreshold: WebGLUniformLocation | null = null
+let uDimmed: WebGLUniformLocation | null = null
+let uContour: WebGLUniformLocation | null = null
+let uTexSize: WebGLUniformLocation | null = null
 
 // Texture per ogni pigmento (una R32F texture per weight map)
 // PERF: le texture vengono riusate se il tile non è cambiato
 let textures: (WebGLTexture | null)[] = []
+
+// SHADER: R32F non supporta LINEAR filtering in WebGL2 senza OES_texture_float_linear.
+// Verifichiamo l'estensione al mount; se non disponibile usiamo NEAREST (funziona sempre).
+let weightMapFilter: number = WebGL2RenderingContext.NEAREST  // default sicuro
 
 // ResizeObserver: sincronizza canvas.width/height con le dimensioni CSS
 let resizeObserver: ResizeObserver | null = null
@@ -140,13 +170,18 @@ function initWebGL(): boolean {
     alpha: true,          // canvas trasparente — l'opera OSD è visibile sotto
     premultipliedAlpha: false,
     antialias: false,     // PERF: non necessario per heatmap
-    preserveDrawingBuffer: false,
+    preserveDrawingBuffer: true,  // necessario: render() non è chiamato ogni frame RAF
   }) as WebGL2RenderingContext | null
 
   if (!gl) {
     console.warn('[PigmentHeatmap] WebGL2 non disponibile — heatmap disabilitata')
     return false
   }
+
+  // SHADER: tenta di abilitare il filtering lineare per texture float 32-bit.
+  // Senza questa estensione, gl.LINEAR su R32F restituisce 0 per tutti i texel.
+  const floatLinear = gl.getExtension('OES_texture_float_linear')
+  weightMapFilter = floatLinear ? gl.LINEAR : gl.NEAREST
 
   // Compila shader
   const vert = compileShader(gl.VERTEX_SHADER, VERT_SRC)
@@ -198,6 +233,9 @@ function initWebGL(): boolean {
   uColor     = gl.getUniformLocation(program, 'u_color')
   uOpacity   = gl.getUniformLocation(program, 'u_opacity')
   uThreshold = gl.getUniformLocation(program, 'u_threshold')
+  uDimmed    = gl.getUniformLocation(program, 'u_dimmed')
+  uContour   = gl.getUniformLocation(program, 'u_contour')
+  uTexSize   = gl.getUniformLocation(program, 'u_texSize')
 
   // SHADER: alpha blending standard (SRC_ALPHA over DST)
   // Ogni pigmento layer si accumula sul precedente con il suo alpha.
@@ -240,12 +278,13 @@ function uploadTextures(): void {
       gl.R32F,
       props.tileWidth, props.tileHeight, 0,
       gl.RED, gl.FLOAT,
-      props.weightMaps[i],
+      props.weightMaps[i] ?? null,
     )
 
-    // PERF: LINEAR per upscaling bilineare — l'heatmap appare smooth anche su schermi grandi
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    // PERF: LINEAR se OES_texture_float_linear disponibile, altrimenti NEAREST.
+    // R32F non supporta LINEAR in WebGL2 senza l'estensione — restituirebbe 0.
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, weightMapFilter)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, weightMapFilter)
     // Clamp: evita artefatti ai bordi del tile
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
@@ -275,19 +314,31 @@ function render(): void {
   gl.clearColor(0, 0, 0, 0)
   gl.clear(gl.COLOR_BUFFER_BIT)
 
+  // SHADER: il resize del canvas resetta tutto lo stato GL secondo spec WebGL.
+  // Re-abilita il blending ad ogni frame per garantire la correttezza
+  // indipendentemente da canvas resize o altri eventi che modificano lo stato.
+  gl.enable(gl.BLEND)
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
   gl.useProgram(program)
   gl.bindVertexArray(quadVao)
 
   for (let i = 0; i < props.palette.length; i++) {
     const match = props.palette[i]
+    const tex = textures[i]
 
     // UX: skip pigmenti nascosti dall'utente nel pannello
-    if (!props.visiblePigmentIds.includes(match.pigment.id)) continue
-    if (!textures[i]) continue
+    if (!match || !props.visiblePigmentIds.includes(match.pigment.id)) continue
+    if (!tex) continue
+
+    // Darken mode: questo layer è in ombra se c'è un pigmento attivo ed è un altro
+    const hasSelection = props.activePigmentId != null
+    const isActive = props.activePigmentId === match.pigment.id
+    const isDimmed = props.darkenNonSelected && hasSelection && !isActive
 
     // Bind texture unit 0 per questa draw call
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, textures[i])
+    gl.bindTexture(gl.TEXTURE_2D, tex)
     gl.uniform1i(uWeightMap, 0)
 
     // COLOR: colore pigmento normalizzato da [0-255] a [0,1]
@@ -295,9 +346,10 @@ function render(): void {
     gl.uniform3f(uColor, r / 255, g / 255, b / 255)
 
     gl.uniform1f(uOpacity, props.opacity)
-    // DISCLAIMER: soglia 0.15 — scarta pixel con peso basso per ridurre rumore
-    // Abbassarla mostra più dettaglio ma aumenta il rumore visivo
-    gl.uniform1f(uThreshold, 0.15)
+    gl.uniform1f(uThreshold, 0.05)
+    gl.uniform1f(uDimmed, isDimmed ? 1.0 : 0.0)
+    gl.uniform1f(uContour, props.showContour ? 1.0 : 0.0)
+    gl.uniform2f(uTexSize, props.tileWidth, props.tileHeight)
 
     // SHADER: 6 vertici = 2 triangoli = quad full-screen
     gl.drawArrays(gl.TRIANGLES, 0, 6)
@@ -357,8 +409,14 @@ watch(() => props.weightMaps, () => {
   render()
 })
 
-// Re-render quando cambia visibilità pigmenti o opacità
-watch([() => props.visiblePigmentIds, () => props.opacity], () => {
+// Re-render quando cambia visibilità pigmenti, opacità o modalità overlay
+watch([
+  () => props.visiblePigmentIds,
+  () => props.opacity,
+  () => props.activePigmentId,
+  () => props.darkenNonSelected,
+  () => props.showContour,
+], () => {
   if (textures.length > 0) render()
 })
 </script>

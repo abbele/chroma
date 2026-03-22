@@ -38,6 +38,9 @@
               :opacity="heatmapOpacity"
               :tile-width="lastAnalysis.stats.tileWidth"
               :tile-height="lastAnalysis.stats.tileHeight"
+              :active-pigment-id="activePigmentId"
+              :darken-non-selected="darkenMode"
+              :show-contour="contourMode"
               @click.native="onOverlayClick"
             />
             <!-- Zona AI selezionata: marker visivo -->
@@ -57,7 +60,7 @@
           </template>
         </GigapixelViewer>
 
-        <!-- Controllo opacità overlay (visibile solo se c'è un'analisi) -->
+        <!-- Controllo opacità overlay + modalità (visibile solo se c'è un'analisi) -->
         <div v-if="lastAnalysis" class="chromascope__overlay-controls">
           <label class="chromascope__overlay-label">
             Overlay
@@ -71,6 +74,16 @@
             />
             <span class="chromascope__range-value">{{ Math.round(heatmapOpacity * 100) }}%</span>
           </label>
+          <div class="chromascope__overlay-modes">
+            <label class="chromascope__overlay-mode-label">
+              <input v-model="darkenMode" type="checkbox" class="chromascope__checkbox" />
+              Evidenzia selezionato
+            </label>
+            <label class="chromascope__overlay-mode-label">
+              <input v-model="contourMode" type="checkbox" class="chromascope__checkbox" />
+              Contorni
+            </label>
+          </div>
         </div>
       </section>
 
@@ -172,6 +185,8 @@
                 'chromascope__pigment-row--mixture': match.isMixture,
                 'chromascope__pigment-row--hidden': !visiblePigmentIds.includes(match.pigment.id),
               }"
+              @mouseenter="activePigmentId = match.pigment.id"
+              @mouseleave="activePigmentId = null"
             >
               <!-- Toggle visibilità layer -->
               <button
@@ -336,7 +351,7 @@
 // UX: SSR disabilitato — usa canvas, WebGL e Web Worker (browser-only)
 definePageMeta({ ssr: false })
 
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 import type { PigmentMatch, TileAnalysis } from '#src/types/analysis'
 import { tileKey } from '#src/types/analysis'
 import { pigments } from '#src/data/pigments'
@@ -378,13 +393,18 @@ const artworkDate = ref(1642)
 
 // Risultati analisi
 const palette = ref<PigmentMatch[]>([])
-/** Ultima TileAnalysis completa — include le weight map per l'overlay WebGL */
-const lastAnalysis = ref<TileAnalysis | null>(null)
+// PERF: shallowRef — TileAnalysis contiene Float32Array per le weight map WebGL.
+// ref() deep-proxerebbe i Float32Array rendendoli inutilizzabili da texImage2D.
+const lastAnalysis = shallowRef<TileAnalysis | null>(null)
 
 // Stato overlay WebGL (Fase 2)
 const heatmapOpacity = ref(0.7)
 /** IDs dei pigmenti visibili nell'overlay. Rimpiazzato interamente ad ogni toggle. */
 const visiblePigmentIds = ref<string[]>([])
+/** ID del pigmento in hover nel pannello — usato per darken/contour mode */
+const activePigmentId = ref<string | null>(null)
+const darkenMode = ref(true)
+const contourMode = ref(false)
 
 // Stato PigmentCard (Fase 3)
 const selectedPigment = ref<PigmentMatch | null>(null)
@@ -694,12 +714,15 @@ function confidenceClass(confidence: number): string {
   font-size: 0.85rem;
 }
 
-/* Controllo opacità overlay */
+/* Controllo opacità overlay + modalità */
 .chromascope__overlay-controls {
   padding: 0.4rem 1rem;
   background: rgba(0,0,0,0.6);
   border-top: 1px solid #1a1a1a;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .chromascope__overlay-label {
@@ -708,6 +731,25 @@ function confidenceClass(confidence: number): string {
   gap: 0.5rem;
   font-size: 0.72rem;
   color: #666;
+}
+
+.chromascope__overlay-modes {
+  display: flex;
+  gap: 1rem;
+}
+
+.chromascope__overlay-mode-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.chromascope__checkbox {
+  accent-color: #c8a96e;
+  cursor: pointer;
 }
 
 /* ─── PANNELLO ──────────────────────────────────────────────────────────── */

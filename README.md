@@ -34,7 +34,7 @@ ChromaScope risolve questo problema usando il modello di **Kubelka-Munk**, un mo
 1. **Carica** un'immagine gigapixel (IIIF URL)
 2. **Naviga** l'opera con zoom e pan fino alla zona di interesse
 3. **Analisi**: K-means in spazio CIELab → matching Delta E verso il database pigmenti → weight map per pixel
-4. **Overlay heatmap**: per ogni pigmento identificato, un layer WebGL colorato mostra dove è presente (toggle visibilità, slider opacità)
+4. **Overlay heatmap**: per ogni pigmento identificato, un layer WebGL colorato mostra dove è presente (toggle visibilità, slider opacità). Hover su un pigmento → **Evidenzia selezionato** attenua gli altri layer; **Contorni** mostra solo il bordo della regione al posto del fill
 5. **Scheda pigmento**: clicca su un pigmento per leggere formula chimica, timeline storica, provenienza, costo, pittori documentati
 6. **Coerenza storica**: l'app segnala automaticamente pigmenti anacronistici rispetto alla datazione dell'opera
 7. **Confronto artisti**: score Jaccard tra i pigmenti trovati e le palette tipiche documentate (Rembrandt, Vermeer, Frans Hals…)
