@@ -69,7 +69,7 @@
  */
 
 import { ref, watch, onUnmounted } from 'vue'
-import type { ViewerRect } from '~/app/composables/useViewer'
+import type { ViewerRect } from '../composables/useViewer'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROPS

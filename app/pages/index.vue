@@ -205,9 +205,9 @@
  */
 
 import { ref, computed, type ComponentInstance } from 'vue'
-import type { PigmentMatch } from '~/src/types/analysis'
-import { tileKey } from '~/src/types/analysis'
-import { pigments } from '~/src/data/pigments'
+import type { PigmentMatch } from '#src/types/analysis'
+import { tileKey } from '#src/types/analysis'
+import { pigments } from '#src/data/pigments'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COSTANTI

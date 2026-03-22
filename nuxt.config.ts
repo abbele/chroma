@@ -9,10 +9,11 @@ export default defineNuxtConfig({
     typeCheck: false, // disabilitato in dev per velocità; abilitare in CI
   },
 
-  // Alias per importare da src/ (types, utils, workers, data) nei componenti Vue
-  // Uso: import type { HistoricalPigment } from '~/src/types/pigment'
+  // Alias per importare da src/ (types, utils, workers, data) nei componenti Vue.
+  // In Nuxt 4 '~' punta a srcDir (app/), quindi usiamo '#src' come prefisso custom.
+  // Uso: import type { HistoricalPigment } from '#src/types/pigment'
   alias: {
-    '~/src': '../src',
+    '#src': './src',
   },
 
   vite: {

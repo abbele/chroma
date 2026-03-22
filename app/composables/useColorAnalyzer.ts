@@ -26,8 +26,8 @@
 
 import { ref, shallowRef, onUnmounted } from 'vue'
 import { wrap, type Remote } from 'comlink'
-import type { ColorAnalyzerAPI, AnalysisConfig, TileAnalysis } from '~/src/types/analysis'
-import { tileKey } from '~/src/types/analysis'
+import type { ColorAnalyzerAPI, AnalysisConfig, TileAnalysis } from '#src/types/analysis'
+import { tileKey } from '#src/types/analysis'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPI
