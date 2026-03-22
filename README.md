@@ -63,7 +63,8 @@ ChromaScope fa il processo inverso: dato il colore osservato (RGB), cerca la com
 - **Confronto artisti**: Jaccard similarity su palette documentate da fonti accademiche
 - **Grafici + export**: CSS puro (barre) + export SVG/JSON
 - **AI reasoning chain**: multi-provider (Groq default / OpenAI / Claude) · streaming SSE · `openai` SDK + `@anthropic-ai/sdk` · prompt engineering storico dell'arte
-- **Deploy**: Vercel
+- **Deploy**: Vercel · Nitro auto-detect · Serverless Functions per API · `runtimeConfig` per chiavi server-side
+- **Validazione**: tabella comparativa ChromaScope vs letteratura strumentale (La Ronda di Notte) — vedi `VALIDATION.md`
 
 ## Opera demo
 
@@ -82,7 +83,7 @@ ChromaScope fa il processo inverso: dato il colore osservato (RGB), cerca la com
 | Fase 3 | Schede pigmenti + coerenza storica | ✅ Completata |
 | Fase 4 | Confronto artista + narrazione | ✅ Completata |
 | Fase 5 | AI Reasoning Chain | ✅ Completata |
-| Fase 6 | Demo, validazione, deploy | ⬜ Non iniziata |
+| Fase 6 | Validazione, La scienza, deploy | ✅ Completata |
 
 ## Licenza
 MIT

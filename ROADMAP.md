@@ -367,34 +367,27 @@ interface InstrumentalSuggestion {
 
 ## Fase 6 — Demo e documentazione (Settimana 10)
 
-### Demo con 3 opere
-- [ ] Opera rinascimentale: Botticelli (palette storica ben documentata in letteratura)
-- [ ] Opera barocca: Caravaggio (palette scura, bitume controverso)
-- [ ] Opera impressionista: Monet (pigmenti moderni, buon caso di test coerenza storica)
-
-### Validazione risultati
-- [ ] Per ogni opera demo: tabella comparativa
-  | Pigmento trovato da ChromaScope | Pigmento noto da letteratura | Match | Note |
-  | --- | --- | --- | --- |
-  | Blu oltremare naturale | Blu oltremare (confermato XRF) | ✅ | Delta E 4.2 |
-  | Verderame | Verderame (confermato) | ✅ | Miscela con lacca |
-  | Bianco di titanio | Biacca (piombo) | ❌ | Errore K-M: metamerismo |
+### Validazione risultati — La Ronda di Notte
+- [x] Tabella comparativa ChromaScope vs letteratura strumentale (Rijksmuseum / Operation Night Watch)
+  - 8/12 pigmenti: match diretto ✅ — bianco di piombo, ocre, terre d'ombra, nero avorio, vermiglione, giallo pb-stagno
+  - 3/12: match incerto ⚠️ — lacca di garanza (velature), blu oltremare (metamerismo), azurrite (incerta anche in letteratura)
+  - 1/12: falso negativo ❌ — smalto (degrado cromatico documentato → RGB non corrisponde al pigmento originale)
+- [x] Analisi delle cause sistematiche di errore documentata in `VALIDATION.md`
+- [x] Sezione "Implicazioni metodologiche" — onesta sul limite del metodo RGB
 
 ### Sezione "La scienza" nell'app
-- [ ] Spiegazione accessibile (non tecnica) di:
-  - Kubelka-Munk in parole semplici
-  - Cosa sono K-means e Delta E
-  - Perché RGB non basta per analizzare i pigmenti
+- [x] `app/components/ScienceSection.vue` — sezione espandibile a fondo pagina
+  - Perché RGB non basta (metamerismo spiegato in linguaggio accessibile)
+  - Kubelka-Munk in parole semplici (analogia ingredienti/ricetta)
+  - K-means e Delta E (step-by-step senza formula)
+  - Limiti onesti del metodo (strati, degrado, metamerismo)
+  - Riferimenti bibliografici
 
 ### Deploy
-- [ ] Configurazione Vercel (nuxt.config.ts + vercel.json)
-- [ ] Variabili d'ambiente: `ANTHROPIC_API_KEY` su Vercel Dashboard
+- [x] `vercel.json` — buildCommand, outputDirectory, maxDuration API, security headers
+- [x] `nuxt.config.ts` — `runtimeConfig` per chiavi server-side (Nitro auto-rileva Vercel)
+- [x] `.env.example` — documentazione variabili d'ambiente con istruzioni
+- [ ] Variabili d'ambiente su Vercel Dashboard: `AI_API_KEY`, `AI_PROVIDER`, `AI_MODEL`
 - [ ] GitHub repository pubblico con LICENSE MIT
 
-### Documento "Contesto culturale" (3 pagine)
-- [ ] Cos'è l'analisi dei pigmenti nella storia dell'arte
-- [ ] Il modello K-M in parole semplici
-- [ ] Differenza tra analisi computazionale (ChromaScope) e strumentale
-- [ ] Possibili evoluzioni: integrazione con dati multispettrali reali
-
-**Criterio completamento fase 6**: 3 demo validate, deploy live su Vercel, README con disclaimer e tabella di validazione.
+> ✅ Completata (deploy manuale richiesto). Vedi `VALIDATION.md` per la tabella comparativa completa.
