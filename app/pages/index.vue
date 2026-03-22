@@ -38,6 +38,14 @@
               :opacity="heatmapOpacity"
               :tile-width="lastAnalysis.stats.tileWidth"
               :tile-height="lastAnalysis.stats.tileHeight"
+              @click.native="onOverlayClick"
+            />
+            <!-- Zona AI selezionata: marker visivo -->
+            <div
+              v-if="aiZoneMarker"
+              class="chromascope__ai-zone-marker"
+              :style="{ left: `${aiZoneMarker.x * 100}%`, top: `${aiZoneMarker.y * 100}%` }"
+              title="Zona selezionata per analisi AI"
             />
           </template>
 
@@ -250,6 +258,36 @@
           <PaletteChart :palette="palette" />
         </div>
 
+        <!-- ── Ragionamento AI (Fase 5) ──────────────────────────────────── -->
+        <div v-if="palette.length > 0" class="chromascope__panel-section">
+          <div v-if="!showAiReasoning" class="chromascope__ai-entry">
+            <button class="chromascope__btn chromascope__btn--ai" @click="showAiReasoning = true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              Analisi storica AI
+            </button>
+            <p class="chromascope__ai-hint">
+              L'AI ragiona sulla palette come uno storico dell'arte — ipotesi, non conclusioni.
+            </p>
+          </div>
+
+          <ReasoningChain
+            v-else
+            :is-streaming="aiReasoning.isStreaming.value"
+            :error="aiReasoning.error.value"
+            :sections="aiReasoning.sections.value"
+            :pending-zone-context="aiReasoning.pendingZoneContext.value"
+            :can-ask="palette.length > 0"
+            :model-question="aiReasoning.question.value"
+            @update:model-question="aiReasoning.question.value = $event"
+            @ask="triggerAiReasoning"
+            @clear-zone="aiReasoning.pendingZoneContext.value = null"
+            @close="showAiReasoning = false; aiReasoning.reset()"
+          />
+        </div>
+
         <!-- Stato vuoto -->
         <div v-else-if="!isAnalyzing && viewerReady" class="chromascope__empty">
           <p>Naviga sull'opera e premi <strong>Analizza area visibile</strong><br>per identificare i pigmenti nella zona corrente.</p>
@@ -301,6 +339,7 @@ import { tileKey } from '#src/types/analysis'
 import { pigments } from '#src/data/pigments'
 import type { ViewerRect } from '../composables/useViewer'
 import { useHistoricalCoherence } from '../composables/useHistoricalCoherence'
+import { useAiReasoning } from '../composables/useAiReasoning'
 
 // Interfaccia minima esposta da GigapixelViewer tramite defineExpose.
 // Evita il dynamic import in type position che causa errori SSR.
@@ -353,6 +392,12 @@ const selectedPigment = ref<PigmentMatch | null>(null)
 
 const { analyzeTile, isAnalyzing, progress, error } = useColorAnalyzer()
 const { reportFromPalette, statusIcon } = useHistoricalCoherence()
+
+// Fase 5: AI Reasoning
+const aiReasoning = useAiReasoning()
+const showAiReasoning = ref(false)
+/** Posizione normalizzata (0–1) del marker zona AI sull'overlay */
+const aiZoneMarker = ref<{ x: number; y: number } | null>(null)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPUTED
@@ -452,6 +497,61 @@ function hideAllLayers(): void {
 
 function openPigmentCard(match: PigmentMatch): void {
   selectedPigment.value = match
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI REASONING (Fase 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * @description Avvia il ragionamento AI con la palette corrente.
+ * Se c'è un contesto zona da click sull'overlay, lo include nell'input.
+ */
+async function triggerAiReasoning(): Promise<void> {
+  if (!coherenceReport.value) return
+  await aiReasoning.startReasoning(
+    palette.value,
+    coherenceReport.value,
+    artworkDate.value,
+    'De Nachtwacht — Rembrandt van Rijn',
+  )
+}
+
+/**
+ * @description Gestisce il click sull'overlay per selezionare una zona AI.
+ * Calcola le coordinate normalizzate e le pigment weights nella zona.
+ *
+ * WORKER: legge i weightMaps del lastAnalysis per la zona cliccata.
+ * Ogni weightMap[i][wy*W+wx] = peso del pigmento i nel pixel (wx, wy).
+ */
+function onOverlayClick(e: MouseEvent): void {
+  if (!lastAnalysis.value || !showAiReasoning.value) return
+
+  const target = e.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const nx = (e.clientX - rect.left) / rect.width
+  const ny = (e.clientY - rect.top) / rect.height
+
+  aiZoneMarker.value = { x: nx, y: ny }
+
+  // Campiona i weight maps nel pixel cliccato
+  const W = lastAnalysis.value.stats.tileWidth
+  const H = lastAnalysis.value.stats.tileHeight
+  const px = Math.floor(nx * W)
+  const py = Math.floor(ny * H)
+  const idx = py * W + px
+
+  const pigmentWeights = lastAnalysis.value.palette.map((m, i) => ({
+    pigmentId: m.pigment.id,
+    weight: lastAnalysis.value!.weightMaps[i]?.[idx] ?? 0,
+  })).filter(pw => pw.weight > 0.05)
+
+  aiReasoning.setZoneContext({
+    x: nx,
+    y: ny,
+    label: `zona ${Math.round(nx * 100)}%, ${Math.round(ny * 100)}%`,
+    pigmentWeights,
+  })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1007,6 +1107,53 @@ function confidenceClass(confidence: number): string {
 /* UX: abilita pointer-events solo se il drawer è aperto */
 .chromascope__drawer-host :deep(.pigment-card) {
   pointer-events: auto;
+}
+
+/* ─── AI REASONING (Fase 5) ─────────────────────────────────────────────── */
+
+.chromascope__ai-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chromascope__btn--ai {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(184, 134, 11, 0.2), rgba(255, 215, 0, 0.15));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #ffd700;
+}
+.chromascope__btn--ai:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(184, 134, 11, 0.35), rgba(255, 215, 0, 0.25));
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.chromascope__ai-hint {
+  color: #555;
+  font-size: 0.68rem;
+  font-style: italic;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Marker visivo zona AI sull'overlay viewer */
+.chromascope__ai-zone-marker {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffd700;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+  animation: pulse-zone 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-zone {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 215, 0, 0.6); }
+  50% { box-shadow: 0 0 14px rgba(255, 215, 0, 0.9); }
 }
 
 /* ─── RESPONSIVE ────────────────────────────────────────────────────────── */
