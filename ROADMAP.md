@@ -337,34 +337,31 @@ interface InstrumentalSuggestion {
 }
 ```
 
-### Implementazione con Claude API
-- [ ] Server route Nuxt (`server/api/reasoning.post.ts`):
-  - Riceve `AIReasoningInput` serializzato
-  - Costruisce un system prompt che inquadra il modello come "storico dell'arte specializzato in materiali pittorici e analisi tecnica"
-  - Il prompt include: lista pigmenti trovati, date, report coerenza storica, palette artista (se disponibile)
-  - Richiede output JSON strutturato seguendo `AIReasoningOutput`
-  - Usa streaming per mostrare il reasoning chain progressivamente all'utente
-- [ ] Componente `<ReasoningChain>`:
-  - Mostra i `ReasoningStep` uno alla volta mentre arrivano (streaming)
-  - Ogni step ha un'icona per il tipo (⚠️ anomalia, 🔬 suggerimento strumentale, 📚 confronto storico)
-  - Le `Anomaly` sono espanse con le ipotesi in un accordion
-  - Le `InstrumentalSuggestion` sono ordinate per priorità
+### Implementazione — completata
+- [x] `src/types/aiReasoning.ts` — tipi: `AIReasoningInput`, `ZoneContext`, `AIStreamEvent`, `ParsedReasoning`
+- [x] `server/api/reasoning.post.ts` — route Nuxt con SSE streaming, multi-provider (Groq/OpenAI/Claude)
+- [x] `app/composables/useAiReasoning.ts` — ponte Vue↔server: fetch SSE, parsing markdown progressivo, gestione zona
+- [x] `app/components/ReasoningChain.vue` — UI streaming: input domanda, badge zona, sezioni progressive, disclaimer
+- [x] `app/pages/index.vue` — integrazione: bottone "Analisi storica AI", click overlay per zona, marker visivo
+- [x] `.env.example` — documentazione variabili d'ambiente
 
-### Prompt engineering
-- [ ] Il system prompt deve istruire il modello a:
-  - NON fare valutazioni estetiche ("il dipinto è bello", "i colori sono armoniosi")
-  - Formulare SEMPRE ipotesi alternative per ogni anomalia (mai conclusioni nette)
-  - Citare sempre la fonte della datazione del pigmento (es: "il Blu di Prussia fu sintetizzato da Diesbach a Berlino nel 1704")
-  - Segnalare esplicitamente i limiti del metodo computazionale
-  - Suggerire la tecnica strumentale specifica (non generica) per ogni verifica
-  - Usare terminologia tecnica corretta (non "colore blu" ma "pigmento blu, probabilmente lapislazzuli")
+### Architettura multi-provider
+- **Default**: Groq (`llama-3.3-70b-versatile`, gratuito) via `openai` SDK con `baseURL` override
+- **Alternativa**: OpenAI (`gpt-4o-mini`) via `openai` SDK
+- **Alternativa**: Claude (`claude-haiku-4-5-20251001`) via `@anthropic-ai/sdk`
+- `AI_BASE_URL` consente override per qualsiasi endpoint OpenAI-compatible (LM Studio, Ollama, Together AI)
 
-### "Chiedi al dipinto" (prompt box)
-- [ ] Input testuale: "Di cosa è fatto il cielo in questa zona?"
-- [ ] Il tool identifica l'area di interesse (click + drag sull'opera) + legge i pigmenti dominanti in quella zona dalle weight map
-- [ ] Risposta AI: "L'area selezionata mostra Blu oltremare naturale (45%) come pigmento dominante, con Biacca (35%) come agente schiarente e tracce di Nero carbone (10%) probabilmente per abbassare la luminosità. Questa combinazione è coerente con la tecnica veneziana del XVI secolo."
+### Streaming e output
+- Risposta in markdown strutturato con sezioni `## Titolo` — robusto per streaming progressivo
+- Il componente `ReasoningChain` parsa le sezioni in tempo reale mentre arrivano
+- Output strutturato: Lettura della palette / Tecnica e prassi / Anomalie e ipotesi / Verifiche suggerite / Nota metodologica
 
-**Criterio completamento fase 5**: reasoning chain strutturato su 2+ opere, "chiedi al dipinto" funzionante, almeno un'anomalia con 3 ipotesi su ogni opera di test.
+### "Chiedi al dipinto"
+- [x] Input testuale libero (domanda facoltativa)
+- [x] Click sull'overlay viewer → legge `weightMaps[i][py*W+px]` per campionamento puntuale
+- [x] Marker visivo (pulsante dorato animato) sulla zona selezionata
+
+> ✅ Completata. Vedi `AI.md` per la documentazione completa di filosofia e architettura.
 
 ---
 

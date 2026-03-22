@@ -207,7 +207,77 @@ Clicca **"Esporta SVG"**.
 
 ---
 
-## 8. Zone diverse — verifica coerenza semantica
+## 8. AI Reasoning Chain
+
+Assicurati di avere `AI_API_KEY` impostata in `.env` (o `.env.local`) e il server riavviato.
+
+Dopo aver fatto un'analisi pigmenti sul mantello rosso del capitano (sezione 2), scorri il pannello fino alla sezione **"Distribuzione e confronto"** — subito sotto compare un nuovo bottone dorato.
+
+Clicca **"Analisi storica AI"**.
+
+**Atteso**:
+- [ ] Il bottone scompare, compare il pannello `ReasoningChain` con un campo input e il bottone "Chiedi"
+- [ ] Appare il messaggio "Clicca sull'overlay del viewer per selezionare una zona specifica."
+
+### Analisi libera (senza domanda)
+
+Lascia il campo domanda vuoto e premi **"Chiedi"**.
+
+**Atteso**:
+- [ ] Le sezioni cominciano ad apparire progressivamente, una alla volta, con un cursore lampeggiante
+- [ ] La prima sezione che compare è **"Lettura della palette"**
+- [ ] Seguono: Tecnica e prassi / Anomalie e ipotesi / Verifiche suggerite / Nota metodologica
+- [ ] La sezione "Nota metodologica" ha uno stile visivamente distinto (sfondo arancio tenue)
+- [ ] Il testo contiene sempre il disclaimer sui limiti del metodo computazionale
+- [ ] Nessun commento estetico ("il dipinto è bello" o simili) — solo osservazioni tecniche e storiche
+
+### Domanda specifica
+
+Scrivi nel campo: **"Perché questa zona è così scura?"** e premi Chiedi.
+
+**Atteso**:
+- [ ] L'AI risponde prioritariamente alla domanda nella sezione "Lettura della palette"
+- [ ] Il tono rimane ipotetico ("suggerisce", "potrebbe indicare")
+
+### Selezione zona con click sul viewer
+
+Con il pannello AI aperto, clicca **direttamente sull'overlay** della heatmap WebGL — ad esempio sulla zona del mantello rosso.
+
+**Atteso**:
+- [ ] Appare un marker circolare dorato pulsante nella posizione cliccata
+- [ ] Nel pannello AI compare il badge zona: "Zona selezionata: zona X%, Y%"
+- [ ] Premi Chiedi — l'AI riceve il contesto specifico di quella zona (pesi pigmenti nel pixel)
+- [ ] La risposta è più specifica rispetto all'analisi senza zona
+
+### Rimozione zona
+
+Clicca **✕** nel badge zona.
+
+**Atteso**:
+- [ ] Il badge zona scompare
+- [ ] Il marker sul viewer scompare
+- [ ] La prossima analisi non include il contesto zona
+
+### Chiudi e riapertura
+
+Clicca **✕** nell'header del pannello AI.
+
+**Atteso**:
+- [ ] Il pannello AI scompare, torna il bottone "Analisi storica AI"
+- [ ] Il ragionamento precedente viene cancellato
+- [ ] Riaprendo, il pannello è vuoto (pronto per una nuova domanda)
+
+### Test senza API key
+
+Rimuovi temporaneamente `AI_API_KEY` da `.env` e riavvia il server.
+
+**Atteso**:
+- [ ] Premi Chiedi → compare messaggio di errore (rosso): "AI API key non configurata"
+- [ ] Nessun crash dell'app — gli altri pannelli continuano a funzionare normalmente
+
+---
+
+## 9. Zone diverse — verifica coerenza semantica
 
 Analizza tre zone distinte e confronta le palette. Questo test verifica che l'analisi stia riconoscendo correttamente la materia dell'opera.
 
@@ -259,6 +329,11 @@ Apri Chrome DevTools (F12) → Toggle device toolbar → seleziona **iPhone 12**
 | Export SVG apribile | T-17 | ☐ |
 | Zone diverse → palette diverse | T-18 | ☐ |
 | Layout responsive su mobile | T-19 | ☐ |
+| Bottone "Analisi storica AI" compare dopo analisi | T-20 | ☐ |
+| Sezioni AI appaiono in streaming progressivo | T-21 | ☐ |
+| Click overlay seleziona zona + marker visivo | T-22 | ☐ |
+| Risposta AI include disclaimer metodologico | T-23 | ☐ |
+| Errore senza API key gestito senza crash | T-24 | ☐ |
 
 ---
 
@@ -271,3 +346,7 @@ Apri Chrome DevTools (F12) → Toggle device toolbar → seleziona **iPhone 12**
 | Tutti i badge ΔE arancio/rosso | Zona uniforme o molto scura — pochi cluster distinti | Navigare su una zona più colorata |
 | Drawer non si apre al click | Nessuna analisi eseguita — palette vuota | Eseguire prima un'analisi |
 | Score confronto artisti tutti bassi | Zona quasi monocromatica (pochi pigmenti in comune) | Normale — provare una zona più variegata |
+| Bottone AI non compare | Nessuna analisi eseguita — palette vuota | Eseguire prima un'analisi |
+| Risposta AI: errore 500 | API key mancante o errata | Verificare `.env` con `AI_API_KEY` |
+| Risposta AI vuota o troncata | Modello gratuito ha rate limit | Attendere 1 minuto e riprovare |
+| Sezioni AI non appaiono progressive | Browser blocca SSE (es. proxy aziendale) | Usare connessione diretta o VPN |

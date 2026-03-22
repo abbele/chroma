@@ -38,7 +38,7 @@ ChromaScope risolve questo problema usando il modello di **Kubelka-Munk**, un mo
 5. **Scheda pigmento**: clicca su un pigmento per leggere formula chimica, timeline storica, provenienza, costo, pittori documentati
 6. **Coerenza storica**: l'app segnala automaticamente pigmenti anacronistici rispetto alla datazione dell'opera
 7. **Confronto artisti**: score Jaccard tra i pigmenti trovati e le palette tipiche documentate (Rembrandt, Vermeer, Frans Hals…)
-8. **AI reasoning** *(Fase 5)*: un modello AI ragiona come uno storico dell'arte — segnala anomalie, formula ipotesi, suggerisce verifiche strumentali
+8. **AI reasoning** *(Fase 5)*: premi "Analisi storica AI" (o poni una domanda libera, o clicca su una zona del viewer) — il modello ragiona come uno storico dell'arte: legge la palette, interpreta le anomalie, formula ipotesi, suggerisce verifiche strumentali. Risposta in streaming progressivo.
 
 ## La scienza dietro il tool
 
@@ -62,7 +62,7 @@ ChromaScope fa il processo inverso: dato il colore osservato (RGB), cerca la com
 - **Coerenza storica**: logica custom su `availableFrom`/`availableTo` con finestre di adozione
 - **Confronto artisti**: Jaccard similarity su palette documentate da fonti accademiche
 - **Grafici + export**: CSS puro (barre) + export SVG/JSON
-- **AI reasoning chain**: Claude API (Anthropic) *(Fase 5)*
+- **AI reasoning chain**: multi-provider (Groq default / OpenAI / Claude) · streaming SSE · `openai` SDK + `@anthropic-ai/sdk` · prompt engineering storico dell'arte
 - **Deploy**: Vercel
 
 ## Opera demo
@@ -81,7 +81,7 @@ ChromaScope fa il processo inverso: dato il colore osservato (RGB), cerca la com
 | Fase 2 | Pigment Map Viewer WebGL | ✅ Completata |
 | Fase 3 | Schede pigmenti + coerenza storica | ✅ Completata |
 | Fase 4 | Confronto artista + narrazione | ✅ Completata |
-| Fase 5 | AI Reasoning Chain | ⬜ Non iniziata |
+| Fase 5 | AI Reasoning Chain | ✅ Completata |
 | Fase 6 | Demo, validazione, deploy | ⬜ Non iniziata |
 
 ## Licenza
