@@ -36,4 +36,23 @@ export default defineNuxtConfig({
       exclude: ['comlink'],
     },
   },
+
+  // PERF: Nitro rileva automaticamente l'ambiente Vercel al deploy.
+  // Le pagine vengono servite come SPA statica (.output/public);
+  // le route server/api/ diventano Serverless Functions Vercel (Node 18+).
+  // La variabile AI_API_KEY va impostata su Vercel Dashboard → Settings → Environment Variables.
+
+  // Variabili d'ambiente pubbliche (lato client) — nessuna chiave privata qui.
+  // Le API key rimangono esclusivamente lato server via process.env.
+  runtimeConfig: {
+    // Chiavi private — accessibili solo in server/api/
+    aiApiKey: '',
+    anthropicApiKey: '',
+    aiProvider: 'groq',
+    aiBaseUrl: '',
+    aiModel: '',
+    public: {
+      // Nessuna chiave pubblica al momento
+    },
+  },
 })
