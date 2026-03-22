@@ -128,9 +128,12 @@ async function findBestMixture(
 } | null> {
   // PERF: Mixbox è importato dinamicamente solo se necessario (miscele)
   // e solo se il ΔE del match singolo è > DELTA_E_DIRECT_MATCH
-  let mixbox: typeof import('mixbox')
+  // mixbox usa `export default` — il dynamic import restituisce { default: { lerp, ... } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mixbox: any
   try {
-    mixbox = await import('mixbox')
+    const mod = await import('mixbox')
+    mixbox = (mod as any).default ?? mod
   } catch {
     // DISCLAIMER: se Mixbox non è disponibile, non possiamo simulare miscele
     return null

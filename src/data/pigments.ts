@@ -111,7 +111,7 @@ export const pigments: HistoricalPigment[] = [
     cost: 'low',
     techniques: ['olio', 'tempera', 'acquerello'],
     category: 'black',
-    trivia: 'Frans Hals mescolava nero di vite con biacca per ottenere i suoi grigi caldi nei tessuti. Un grigio "rotto" — né freddo né neutro — tipico della pittura olandese del '600.',
+    trivia: "Frans Hals mescolava nero di vite con biacca per ottenere i suoi grigi caldi nei tessuti. Un grigio \"rotto\" — né freddo né neutro — tipico della pittura olandese del '600.",
     source: 'https://colourlex.com/project/vine-black/',
     dutchMasters: ['Frans Hals', 'Rembrandt van Rijn', 'Johannes Vermeer', 'Jan Steen'],
     degradation: 'Essiccazione lentissima in olio. Particelle grossolane rispetto al nero fumo.',

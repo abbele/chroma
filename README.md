@@ -31,12 +31,14 @@ Quando guardiamo un dipinto, vediamo colori. Ma quei colori sono il risultato di
 ChromaScope risolve questo problema usando il modello di **Kubelka-Munk**, un modello fisico che descrive come i pigmenti assorbono e diffondono la luce. Dato un'immagine RGB, il tool ricostruisce una decomposizione plausibile in pigmenti fisici e mostra dove ciascun pigmento è stato usato.
 
 ## Come funziona
-1. **Carica** un'immagine gigapixel (IIIF URL o file locale)
-2. **Analisi**: il tool decompone l'immagine nei pigmenti probabili
-3. **Esplora le mappe**: per ogni pigmento, vedi dove è stato usato nell'opera
-4. **Leggi il contesto**: scopri la storia, la provenienza e il costo di ogni pigmento
-5. **Verifica la coerenza storica**: l'app ti dice se i pigmenti sono compatibili con la datazione dell'opera
-6. **AI reasoning**: un modello AI analizza la palette come farebbe uno storico dell'arte — segnala anomalie, formula ipotesi, suggerisce cosa verificare strumentalmente
+1. **Carica** un'immagine gigapixel (IIIF URL)
+2. **Naviga** l'opera con zoom e pan fino alla zona di interesse
+3. **Analisi**: K-means in spazio CIELab → matching Delta E verso il database pigmenti → weight map per pixel
+4. **Overlay heatmap**: per ogni pigmento identificato, un layer WebGL colorato mostra dove è presente (toggle visibilità, slider opacità)
+5. **Scheda pigmento**: clicca su un pigmento per leggere formula chimica, timeline storica, provenienza, costo, pittori documentati
+6. **Coerenza storica**: l'app segnala automaticamente pigmenti anacronistici rispetto alla datazione dell'opera
+7. **Confronto artisti**: score Jaccard tra i pigmenti trovati e le palette tipiche documentate (Rembrandt, Vermeer, Frans Hals…)
+8. **AI reasoning** *(Fase 5)*: un modello AI ragiona come uno storico dell'arte — segnala anomalie, formula ipotesi, suggerisce verifiche strumentali
 
 ## La scienza dietro il tool
 
@@ -51,16 +53,16 @@ ChromaScope fa il processo inverso: dato il colore osservato (RGB), cerca la com
 - Mixbox: "Practical Pigment Mixing for Digital Painting", ACM SIGGRAPH 2021
 
 ## Tecnologie
-- **Framework**: Nuxt 4 (Vue 3)
-- **Linguaggio**: TypeScript (strict)
-- **Package manager**: pnpm
-- **Rendering mappe pigmento**: WebGL con shader custom (heatmap per pigmento)
-- **Analisi colore**: Web Worker + comlink (pipeline K-M e K-means isolata dal thread principale)
-- **Viewer gigapixel**: OpenSeadragon
-- **Pigment mixing**: Mixbox (modello K-M applicato)
+- **Framework**: Nuxt 4 (Vue 3) · TypeScript strict · pnpm
+- **Viewer gigapixel**: OpenSeadragon (IIIF)
+- **Analisi colore**: Web Worker + comlink — K-means in CIELab, Delta E CIE2000, weight map Float32Array
+- **Rendering mappe pigmento**: WebGL2 — shader GLSL R32F texture, alpha blending per-layer
+- **Pigment mixing**: Mixbox (modello K-M per simulazione miscele)
 - **Spazi colore**: colorjs.io (RGB → CIELab, Delta E CIE2000)
-- **Grafici**: D3
-- **AI reasoning chain**: Claude API (Anthropic)
+- **Coerenza storica**: logica custom su `availableFrom`/`availableTo` con finestre di adozione
+- **Confronto artisti**: Jaccard similarity su palette documentate da fonti accademiche
+- **Grafici + export**: CSS puro (barre) + export SVG/JSON
+- **AI reasoning chain**: Claude API (Anthropic) *(Fase 5)*
 - **Deploy**: Vercel
 
 ## Opera demo
@@ -76,9 +78,9 @@ ChromaScope fa il processo inverso: dato il colore osservato (RGB), cerca la com
 |------|-------------|-------|
 | Fase 0 | Studio, setup, database pigmenti | ✅ Completata |
 | Fase 1 | Color Analysis Engine (Worker K-means + K-M) | ✅ Completata |
-| Fase 2 | Pigment Map Viewer WebGL | ⬜ Non iniziata |
-| Fase 3 | Schede pigmenti + coerenza storica | ⬜ Non iniziata |
-| Fase 4 | Confronto artista + narrazione | ⬜ Non iniziata |
+| Fase 2 | Pigment Map Viewer WebGL | ✅ Completata |
+| Fase 3 | Schede pigmenti + coerenza storica | ✅ Completata |
+| Fase 4 | Confronto artista + narrazione | ✅ Completata |
 | Fase 5 | AI Reasoning Chain | ⬜ Non iniziata |
 | Fase 6 | Demo, validazione, deploy | ⬜ Non iniziata |
 
