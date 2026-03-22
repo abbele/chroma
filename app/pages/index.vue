@@ -204,10 +204,19 @@
  * Es: Blu di Prussia (1704) viene escluso dall'analisi della Ronda di Notte.
  */
 
-import { ref, computed, type ComponentInstance } from 'vue'
+import { ref, computed } from 'vue'
 import type { PigmentMatch } from '#src/types/analysis'
 import { tileKey } from '#src/types/analysis'
 import { pigments } from '#src/data/pigments'
+import type { ViewerRect } from '../composables/useViewer'
+
+// Interfaccia minima dei metodi esposti da GigapixelViewer tramite defineExpose.
+// Evita il dynamic import in type position che può causare errori SSR.
+interface ViewerInstance {
+  goToViewport: (rect: ViewerRect, duration?: number) => void
+  getCurrentViewport: () => ViewerRect | null
+  captureViewport: () => string | null
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COSTANTI
@@ -225,7 +234,7 @@ const NIGHT_WATCH_IIIF = 'https://iiif.micr.io/PJEZO/info.json'
 // STATO
 // ─────────────────────────────────────────────────────────────────────────────
 
-const viewerRef = ref<ComponentInstance<typeof import('../components/GigapixelViewer.vue').default> | null>(null)
+const viewerRef = ref<ViewerInstance | null>(null)
 const viewerReady = ref(false)
 
 // Configurazione analisi
